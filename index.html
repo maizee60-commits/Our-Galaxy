@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Our Universe</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+min-height:100vh;
+min-height:100dvh;
+overflow:hidden;
+background:black;
+font-family:'Segoe UI',sans-serif;
+touch-action:manipulation;
+}
+
+canvas{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+height:100dvh;
+}
+
+#playBtn{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+max-width:calc(100vw - 32px);
+min-height:48px;
+padding:14px clamp(20px, 6vw, 40px);
+font-size:clamp(1rem, 4vw, 1.2rem);
+border:none;
+border-radius:50px;
+background:#ff1493;
+color:white;
+cursor:pointer;
+z-index:1000;
+box-shadow:0 0 30px #ff1493;
+}
+
+#message{
+position:absolute;
+top:clamp(16px, 4vh, 40px);
+left:50%;
+transform:translate(-50%,-12px) scale(0.98);
+width:min(calc(100vw - 32px), 560px);
+max-height:calc(100dvh - 80px);
+overflow-y:auto;
+padding:clamp(12px, 2vw, 18px) clamp(18px, 3vw, 26px);
+border:1px solid rgba(255,220,242,0.18);
+border-radius:20px;
+background:linear-gradient(145deg, rgba(17,13,35,0.5), rgba(23,11,29,0.34));
+box-shadow:0 12px 42px rgba(0,0,0,0.22), 0 0 32px rgba(160,118,255,0.12);
+backdrop-filter:blur(8px);
+-webkit-backdrop-filter:blur(8px);
+text-align:center;
+color:white;
+z-index:999;
+opacity:0;
+filter:blur(8px);
+transition:opacity 2.2s ease, transform 2.6s cubic-bezier(0.2, 0.75, 0.25, 1), filter 2.2s ease;
+pointer-events:none;
+will-change:opacity, transform, filter;
+}
+
+#message.is-visible{
+opacity:1;
+filter:blur(0);
+transform:translate(-50%,0) scale(1);
+pointer-events:auto;
+}
+
+#message h1,
+#message p{
+opacity:0;
+transform:translateY(8px);
+transition:opacity 1.1s ease, transform 1.3s cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+#message.is-visible h1,
+#message.is-visible p{
+opacity:1;
+transform:translateY(0);
+}
+
+#message.is-visible h1{
+transition-delay:0.25s;
+}
+
+#message.is-visible p{
+transition-delay:0.48s;
+}
+
+#message h1{
+font-size:clamp(1.25rem,3.2vw,2rem);
+line-height:1.2;
+letter-spacing:0.035em;
+color:#ffe5f4;
+margin-bottom:clamp(6px,1.2vh,12px);
+text-shadow:0 0 24px rgba(255,105,180,0.55), 0 0 48px rgba(142,133,255,0.25);
+}
+
+#message p{
+max-width:46ch;
+margin:0 auto;
+font-size:clamp(0.98rem,2.2vw,1.15rem);
+line-height:1.5;
+letter-spacing:0.012em;
+color:rgba(250,244,255,0.95);
+text-wrap:pretty;
+}
+
+#message a{
+color:#ffd4ed;
+text-decoration:underline;
+text-decoration-color:rgba(255,151,210,0.85);
+text-decoration-thickness:1px;
+text-underline-offset:6px;
+pointer-events:auto;
+display:inline-block;
+min-height:44px;
+padding:4px 6px;
+border-radius:8px;
+transition:color 0.2s ease,text-shadow 0.2s ease,background-color 0.2s ease;
+}
+
+#message a:hover,
+#message a:focus-visible{
+color:#fff;
+background-color:rgba(255,155,211,0.1);
+text-shadow:0 0 16px rgba(255,105,180,0.9);
+outline:2px solid rgba(255,190,225,0.7);
+outline-offset:3px;
+}
+
+@media (max-height:520px){
+#message{
+top:8px;
+max-height:calc(100dvh - 16px);
+padding:10px 18px;
+}
+
+#message h1{
+margin-bottom:6px;
+}
+
+#message p{
+font-size:clamp(0.9rem,2.6vw,1.1rem);
+line-height:1.35;
+}
+}
+
+@media (prefers-reduced-motion:reduce){
+#message{
+transition:opacity 0.01ms linear;
+transform:translate(-50%,0);
+filter:none;
+}
+
+#message.is-visible{
+transform:translate(-50%,0);
+}
+
+#message h1,
+#message p,
+#message.is-visible h1,
+#message.is-visible p{
+opacity:1;
+transform:none;
+transition:none;
+}
+}
+
+</style>
+
+<script type="importmap">
+{
+"imports":{
+"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+}
+}
+</script>
+
+</head>
+<body>
+
+<button id="playBtn">
+Enter Our Universe
+</button>
+
+<div id="message">
+<h1>2 months of Happiness!</h1>
+
+<p>
+<a href="./letter.html">I love you endlessly—to infinity and beyond, with all my heart and my whole galaxy.</a>
+</p>
+</div>
+
+<audio id="music" src="./Bubble%20OST%20Main%20Theme%20EPIC%20EMOTIONAL%20COVER%20(UTAtoHIBIKI).mp3" preload="auto" playsinline loop>
+</audio>
+
+<canvas id="bg"></canvas>
+
+<script type="module">
+
+import * as THREE from "three";
+
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+2000
+);
+
+function getCameraDistance(){
+return window.innerWidth / Math.max(window.innerHeight, 1) < 0.8 ? 145 : 80;
+}
+
+camera.position.z = getCameraDistance();
+
+const renderer = new THREE.WebGLRenderer({
+canvas:document.querySelector("#bg"),
+antialias:true
+});
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+renderer.setPixelRatio(
+Math.min(window.devicePixelRatio, 1.5)
+);
+
+// STAR BEFORE BIG BANG
+
+const starGeo =
+new THREE.SphereGeometry(2,64,64);
+
+const starMat =
+new THREE.MeshBasicMaterial({
+color:0xffffff
+});
+
+const birthStar =
+new THREE.Mesh(
+starGeo,
+starMat
+);
+
+scene.add(birthStar);
+
+// EXPLOSION PARTICLES
+
+const isCompactDevice =
+window.matchMedia("(max-width: 768px)").matches ||
+window.matchMedia("(pointer: coarse)").matches;
+const particleCount = isCompactDevice ? 7000 : 20000;
+
+const particleGeo =
+new THREE.BufferGeometry();
+
+const particlePositions =
+new Float32Array(
+particleCount * 3
+);
+
+const velocity = [];
+
+for(let i=0;i<particleCount;i++){
+
+particlePositions[i*3]=0;
+particlePositions[i*3+1]=0;
+particlePositions[i*3+2]=0;
+
+velocity.push({
+x:(Math.random()-0.5)*3,
+y:(Math.random()-0.5)*3,
+z:(Math.random()-0.5)*3
+});
+
+}
+
+particleGeo.setAttribute(
+"position",
+new THREE.BufferAttribute(
+particlePositions,
+3
+)
+);
+
+const particleMat =
+new THREE.PointsMaterial({
+size:0.15,
+color:0xffffff,
+transparent:true,
+opacity:1
+});
+
+const particles =
+new THREE.Points(
+particleGeo,
+particleMat
+);
+
+scene.add(particles);
+
+// GALAXY
+
+const galaxyCount = isCompactDevice ? 18000 : 50000;
+
+const galaxyGeo =
+new THREE.BufferGeometry();
+
+const galaxyPos =
+new Float32Array(
+galaxyCount * 3
+);
+
+const galaxyColors =
+new Float32Array(
+galaxyCount * 3
+);
+
+const innerColor =
+new THREE.Color("#ff69b4");
+
+const outerColor =
+new THREE.Color("#4da6ff");
+
+for(let i=0;i<galaxyCount;i++){
+
+const i3 = i*3;
+
+const radius =
+Math.random()*50;
+
+const spin = radius*1.2;
+
+const branch =
+(i%5)/5*Math.PI*2;
+
+const randomX =
+(Math.random()-0.5)*0.5*radius;
+
+const randomY =
+(Math.random()-0.5)*0.2*radius;
+
+const randomZ =
+(Math.random()-0.5)*0.5*radius;
+
+galaxyPos[i3] =
+Math.cos(branch+spin)*radius
++ randomX;
+
+galaxyPos[i3+1] =
+randomY;
+
+galaxyPos[i3+2] =
+Math.sin(branch+spin)*radius
++ randomZ;
+
+const mixed =
+innerColor.clone();
+
+mixed.lerp(
+outerColor,
+radius/50
+);
+
+galaxyColors[i3] = mixed.r;
+galaxyColors[i3+1] = mixed.g;
+galaxyColors[i3+2] = mixed.b;
+}
+
+galaxyGeo.setAttribute(
+"position",
+new THREE.BufferAttribute(
+galaxyPos,
+3
+)
+);
+
+galaxyGeo.setAttribute(
+"color",
+new THREE.BufferAttribute(
+galaxyColors,
+3
+)
+);
+
+const galaxyMat =
+new THREE.PointsMaterial({
+
+size:0.08,
+
+vertexColors:true,
+
+transparent:true,
+opacity:0,
+
+blending:
+THREE.AdditiveBlending,
+
+depthWrite:false
+
+});
+
+const galaxy =
+new THREE.Points(
+galaxyGeo,
+galaxyMat
+);
+
+galaxy.rotation.x = 1.05;
+galaxy.visible = true;
+scene.add(galaxy);
+
+const inflowCount = isCompactDevice ? 2200 : 6500;
+const inflowGeometry = new THREE.BufferGeometry();
+const inflowPositions = new Float32Array(inflowCount * 3);
+const inflowColors = new Float32Array(inflowCount * 3);
+const inflowParticles = [];
+const inflowOuterColor = new THREE.Color("#6f9dff");
+const inflowInnerColor = new THREE.Color("#fff4ff");
+const inflowColor = new THREE.Color();
+
+for(let i=0;i<inflowCount;i++){
+const i3 = i * 3;
+const duration = 20 + Math.random() * 16;
+const phase = Math.random();
+const angle = Math.random() * Math.PI * 2;
+const progress = phase;
+const radius = 54 - progress * 48;
+
+inflowPositions[i3] = Math.cos(angle) * radius;
+inflowPositions[i3 + 1] = (Math.random() - 0.5) * radius * 0.09;
+inflowPositions[i3 + 2] = Math.sin(angle) * radius;
+
+const color = inflowOuterColor.clone().lerp(inflowInnerColor, progress * 0.72);
+inflowColors[i3] = color.r;
+inflowColors[i3 + 1] = color.g;
+inflowColors[i3 + 2] = color.b;
+
+inflowParticles.push({
+phase,
+duration,
+angle,
+height:inflowPositions[i3 + 1],
+offset:Math.random() * 0.3
+});
+}
+
+inflowGeometry.setAttribute(
+"position",
+new THREE.BufferAttribute(inflowPositions, 3)
+);
+inflowGeometry.setAttribute(
+"color",
+new THREE.BufferAttribute(inflowColors, 3)
+);
+
+const inflow = new THREE.Points(
+inflowGeometry,
+new THREE.PointsMaterial({
+size:isCompactDevice ? 0.14 : 0.12,
+vertexColors:true,
+transparent:true,
+opacity:0,
+blending:THREE.AdditiveBlending,
+depthWrite:false
+})
+);
+inflow.renderOrder = 1;
+scene.add(inflow);
+
+const vortexPointCount = isCompactDevice ? 900 : 1800;
+const vortexPositions = new Float32Array(vortexPointCount * 3);
+const vortexColors = new Float32Array(vortexPointCount * 3);
+const vortexInnerColor = new THREE.Color("#fff0ff");
+const vortexOuterColor = new THREE.Color("#8ddaff");
+
+for(let i=0;i<vortexPointCount;i++){
+const i3 = i * 3;
+const arm = i % 4;
+const step = Math.floor(i / 4);
+const armProgress = step / Math.ceil(vortexPointCount / 4);
+const radius = 1.08 + Math.pow(armProgress, 0.88) * 7.05;
+const angle = arm * Math.PI * 0.5 + armProgress * Math.PI * 8;
+
+vortexPositions[i3] = Math.cos(angle) * radius;
+vortexPositions[i3 + 1] = Math.sin(angle) * radius;
+vortexPositions[i3 + 2] = (Math.random() - 0.5) * 0.65;
+
+const color = vortexInnerColor.clone().lerp(vortexOuterColor, armProgress);
+vortexColors[i3] = color.r;
+vortexColors[i3 + 1] = color.g;
+vortexColors[i3 + 2] = color.b;
+}
+
+const vortexGeometry = new THREE.BufferGeometry();
+vortexGeometry.setAttribute(
+"position",
+new THREE.BufferAttribute(vortexPositions, 3)
+);
+vortexGeometry.setAttribute(
+"color",
+new THREE.BufferAttribute(vortexColors, 3)
+);
+
+const vortexMaterial = new THREE.PointsMaterial({
+size:0.16,
+vertexColors:true,
+transparent:true,
+opacity:0,
+blending:THREE.AdditiveBlending,
+depthWrite:false
+});
+
+const galaxyCoreGroup = new THREE.Group();
+scene.add(galaxyCoreGroup);
+
+const whirlpoolPlane = new THREE.Group();
+whirlpoolPlane.rotation.x = Math.PI / 2;
+galaxyCoreGroup.add(whirlpoolPlane);
+
+const vortex = new THREE.Points(vortexGeometry, vortexMaterial);
+vortex.renderOrder = 1;
+whirlpoolPlane.add(vortex);
+
+const vortexArms = new THREE.Group();
+whirlpoolPlane.add(vortexArms);
+const vortexArmMaterials = [];
+const vortexArmColors = [0xd8c5ff, 0xa9d9ff, 0xffc3f2];
+
+for(let arm=0;arm<3;arm++){
+const armPoints = [];
+const armSteps = 220;
+
+for(let step=0;step<=armSteps;step++){
+const progress = step / armSteps;
+const radius = 1.12 + progress * 7.45;
+const angle = arm * Math.PI * 2 / 3 + progress * Math.PI * 5;
+
+armPoints.push(new THREE.Vector3(
+Math.cos(angle) * radius,
+Math.sin(angle) * radius,
+Math.sin(progress * Math.PI * 4 + arm) * 0.12
+));
+}
+
+const armCurve = new THREE.CatmullRomCurve3(armPoints);
+const armGeometry = new THREE.TubeGeometry(armCurve, 220, 0.055, 5, false);
+const armMaterial = new THREE.MeshBasicMaterial({
+color:vortexArmColors[arm],
+transparent:true,
+opacity:0,
+blending:THREE.AdditiveBlending,
+depthWrite:false
+});
+
+const armMesh = new THREE.Mesh(armGeometry, armMaterial);
+armMesh.renderOrder = 1;
+vortexArms.add(armMesh);
+vortexArmMaterials.push(armMaterial);
+}
+
+const accretionDiskMaterial = new THREE.ShaderMaterial({
+transparent:true,
+depthWrite:false,
+side:THREE.DoubleSide,
+uniforms:{
+uTime:{value:0},
+uFade:{value:0}
+},
+vertexShader:`
+varying vec2 vUv;
+
+void main(){
+vUv = uv;
+gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}
+`,
+fragmentShader:`
+uniform float uTime;
+uniform float uFade;
+varying vec2 vUv;
+
+void main(){
+vec2 point = vUv * 2.0 - 1.0;
+float radius = length(point);
+float angle = atan(point.y, point.x);
+float outerFade = 1.0 - smoothstep(0.78, 1.0, radius);
+float horizon = 0.32;
+float innerEdge = smoothstep(horizon - 0.018, horizon + 0.025, radius);
+float photonRing = exp(-pow((radius - 0.345) / 0.022, 2.0));
+float spiralWave = sin(angle + log(max(radius, 0.045)) * 6.4 - uTime * 1.2);
+float spiralFilaments = pow(max(spiralWave * 0.5 + 0.5, 0.0), 8.0);
+float armShape = exp(-pow((radius - 0.52) / 0.25, 2.0));
+float turbulence = 0.72 + 0.28 * sin(angle * 13.0 + radius * 46.0 - uTime * 1.65);
+float inwardGlow = exp(-max(radius - horizon, 0.0) * 4.5);
+vec3 deepBlue = vec3(0.22, 0.44, 0.95);
+vec3 rosePlasma = vec3(1.0, 0.42, 0.78);
+vec3 whiteHot = vec3(1.0, 0.92, 1.0);
+float heat = clamp(photonRing * 0.95 + spiralFilaments * armShape * 0.72, 0.0, 1.0);
+vec3 color = mix(deepBlue, rosePlasma, heat);
+color = mix(color, whiteHot, clamp(photonRing * 0.9, 0.0, 1.0));
+float glow = (photonRing * 1.15 + spiralFilaments * armShape * 0.72 + inwardGlow * armShape * 0.2) * turbulence;
+float alpha = (0.012 + glow * 1.08) * innerEdge * outerFade * uFade;
+gl_FragColor = vec4(color * (0.48 + glow * 2.1), alpha);
+}
+`
+});
+
+const accretionDisk = new THREE.Mesh(
+new THREE.CircleGeometry(4.3, 96),
+accretionDiskMaterial
+);
+accretionDisk.position.y = 0.035;
+accretionDisk.renderOrder = 5;
+accretionDisk.material.depthTest = false;
+whirlpoolPlane.add(accretionDisk);
+
+const vortexCore = new THREE.Mesh(
+new THREE.SphereGeometry(0.82, 40, 32),
+new THREE.MeshBasicMaterial({
+color:0x010208,
+transparent:true,
+opacity:1,
+depthTest:false,
+depthWrite:false
+})
+);
+vortexCore.renderOrder = 6;
+vortexCore.scale.set(1.62, 1.62, 0.78);
+vortexCore.position.y = 0.09;
+whirlpoolPlane.add(vortexCore);
+
+const eventHorizon = new THREE.Mesh(
+new THREE.TorusGeometry(1.52, 0.075, 10, 96),
+new THREE.MeshBasicMaterial({
+color:0xffdcff,
+transparent:true,
+opacity:0,
+blending:THREE.AdditiveBlending,
+depthWrite:false
+})
+);
+eventHorizon.position.y = 0.12;
+eventHorizon.renderOrder = 7;
+eventHorizon.material.depthTest = false;
+whirlpoolPlane.add(eventHorizon);
+
+const bubbleGeometry =
+new THREE.SphereGeometry(1, 18, 14);
+
+const bubbleBaseMaterial =
+new THREE.ShaderMaterial({
+transparent:true,
+depthWrite:false,
+side:THREE.DoubleSide,
+uniforms:{
+uTime:{value:0},
+uHue:{value:0},
+uFade:{value:0}
+},
+vertexShader:`
+varying vec3 vNormalView;
+varying vec3 vViewPosition;
+varying vec2 vUv;
+
+void main(){
+vec4 viewPosition = modelViewMatrix * vec4(position, 1.0);
+vNormalView = normalize(normalMatrix * normal);
+vViewPosition = -viewPosition.xyz;
+vUv = uv;
+gl_Position = projectionMatrix * viewPosition;
+}
+`,
+fragmentShader:`
+uniform float uTime;
+uniform float uHue;
+uniform float uFade;
+varying vec3 vNormalView;
+varying vec3 vViewPosition;
+varying vec2 vUv;
+
+vec3 hueToRgb(float hue){
+vec3 angle = abs(fract(hue + vec3(0.0, 0.6667, 0.3333)) * 6.0 - 3.0);
+return clamp(angle - 1.0, 0.0, 1.0);
+}
+
+void main(){
+vec3 normal = normalize(vNormalView);
+vec3 viewDirection = normalize(vViewPosition);
+float facing = max(dot(normal, viewDirection), 0.0);
+float rim = smoothstep(0.58, 0.96, 1.0 - facing);
+float highlight = pow(max(dot(reflect(-viewDirection, normal), normalize(vec3(-0.4, 0.55, 1.0))), 0.0), 42.0);
+float hue = uHue + rim * 0.16 + sin(vUv.y * 5.0 + uTime * 0.45) * 0.012;
+vec3 iridescence = hueToRgb(hue);
+vec3 color = mix(vec3(0.78, 0.9, 1.0), iridescence, 0.38) + highlight * vec3(0.9, 0.95, 1.0);
+float alpha = (0.004 + rim * 0.4 + highlight * 0.68) * uFade;
+gl_FragColor = vec4(color, alpha);
+}
+`
+});
+
+const bubbleCount = isCompactDevice ? 18 : 34;
+const bubbles = [];
+const bubbleStartDelayAfterGalaxyStart = 10;
+const bubbleGlintGeometry =
+new THREE.SphereGeometry(0.09, 8, 6);
+const bubbleGlintMaterial =
+new THREE.MeshBasicMaterial({
+color:0xffffff,
+transparent:true,
+opacity:0.9,
+depthWrite:false
+});
+
+for(let i=0;i<bubbleCount;i++){
+const material = bubbleBaseMaterial.clone();
+material.uniforms.uHue.value = 0.53 + Math.random() * 0.22;
+
+const bubble = new THREE.Mesh(bubbleGeometry, material);
+bubble.visible = false;
+bubble.renderOrder = 2;
+
+const glint = new THREE.Mesh(
+bubbleGlintGeometry,
+bubbleGlintMaterial
+);
+glint.position.set(-0.28, 0.4, 0.84);
+bubble.add(glint);
+
+const tinyGlint = new THREE.Mesh(
+bubbleGlintGeometry,
+bubbleGlintMaterial
+);
+tinyGlint.scale.setScalar(0.5);
+tinyGlint.position.set(0.34, -0.16, 0.91);
+bubble.add(tinyGlint);
+
+scene.add(bubble);
+
+const directionY = Math.random() * 2 - 1;
+const directionAngle = Math.random() * Math.PI * 2;
+const directionRadius = Math.sqrt(1 - directionY * directionY);
+
+bubbles.push({
+mesh:bubble,
+delay:i * (isCompactDevice ? 0.42 : 0.28),
+life:8 + Math.random() * 5,
+size:0.72 + Math.random() * 0.98,
+phase:Math.random() * Math.PI * 2,
+drift:0.7 + Math.random() * 2.2,
+direction:new THREE.Vector3(
+directionRadius * Math.cos(directionAngle),
+directionY,
+directionRadius * Math.sin(directionAngle)
+),
+swirl:new THREE.Vector3(
+(Math.random() - 0.5) * 1.4,
+(Math.random() - 0.5) * 1.4,
+(Math.random() - 0.5) * 1.4
+)
+});
+}
+
+const meteorCount = isCompactDevice ? 6 : 12;
+const meteors = [];
+const meteorHeadGeometry = new THREE.SphereGeometry(0.42, 12, 10);
+const meteorColors = [0xd6eaff, 0xb8d6ff, 0xf1d7ff];
+
+for(let i=0;i<meteorCount;i++){
+const trailGeometry = new THREE.BufferGeometry();
+trailGeometry.setAttribute(
+"position",
+new THREE.BufferAttribute(new Float32Array(6), 3)
+);
+const tailColor = new THREE.Color(meteorColors[i % meteorColors.length]).multiplyScalar(0.22);
+const tipColor = new THREE.Color(0xffffff);
+trailGeometry.setAttribute(
+"color",
+new THREE.Float32BufferAttribute([
+tailColor.r, tailColor.g, tailColor.b,
+tipColor.r, tipColor.g, tipColor.b
+], 3)
+);
+
+const trailMaterial = new THREE.LineBasicMaterial({
+vertexColors:true,
+transparent:true,
+opacity:0,
+blending:THREE.AdditiveBlending,
+depthWrite:false
+});
+
+const trail = new THREE.Line(trailGeometry, trailMaterial);
+trail.renderOrder = 3;
+scene.add(trail);
+
+const headMaterial = new THREE.MeshBasicMaterial({
+color:0xffffff,
+transparent:true,
+opacity:0.85,
+blending:THREE.AdditiveBlending,
+depthWrite:false
+});
+const head = new THREE.Mesh(meteorHeadGeometry, headMaterial);
+head.renderOrder = 4;
+scene.add(head);
+
+meteors.push({
+trail,
+head,
+life:0.8 + Math.random() * 0.7,
+cycle:3.2 + Math.random() * 3.2,
+offset:Math.random() * 8,
+cycleIndex:-1,
+start:new THREE.Vector3(),
+end:new THREE.Vector3()
+});
+}
+
+// LIGHTS
+
+const ambient =
+new THREE.AmbientLight(
+0xffffff,
+2
+);
+
+scene.add(ambient);
+
+const pinkLight =
+new THREE.PointLight(
+0xff69b4,
+1000
+);
+
+pinkLight.position.set(
+0,
+0,
+30
+);
+
+scene.add(pinkLight);
+
+const bubbleCoreLight =
+new THREE.PointLight(0x9edcff, 42, 38, 2);
+bubbleCoreLight.position.set(0, 0, 0);
+galaxyCoreGroup.add(bubbleCoreLight);
+
+// AUDIO
+
+const music =
+document.getElementById("music");
+music.volume = 0.65;
+music.muted = true;
+
+const playButton =
+document.getElementById("playBtn");
+const messageLink =
+document.querySelector("#message a");
+const playbackStorageKey = "universeMusicTime";
+const galaxyRotationStart = 7;
+const messageDelayAfterGalaxyStart = 120;
+
+playButton.addEventListener("click", async () => {
+if(!started){
+startAnimation();
+}
+
+try{
+await music.play();
+}catch(error){
+console.error("Unable to start the selected music:", error);
+playButton.textContent="Tap to try starting the music again";
+return;
+}
+
+playButton.style.display="none";
+});
+
+messageLink.addEventListener("click", () => {
+if(Number.isFinite(music.currentTime)){
+sessionStorage.setItem(playbackStorageKey, String(music.currentTime));
+}
+});
+
+let started = false;
+let startTime;
+
+function startAnimation(){
+
+started = true;
+startTime = Date.now();
+
+}
+
+// ANIMATION
+
+function animate(){
+
+requestAnimationFrame(
+animate
+);
+
+if(started){
+
+const elapsed =
+(Date.now()-startTime)/1000;
+
+// Stage 1
+
+if(elapsed < 3){
+
+birthStar.scale.setScalar(
+1 + Math.sin(elapsed*8)*0.3
+);
+
+}
+
+// Stage 2 BOOM
+
+if(elapsed > 3 && elapsed < 7){
+
+birthStar.visible = false;
+
+const pos =
+particleGeo.attributes
+.position.array;
+
+for(let i=0;i<particleCount;i++){
+
+pos[i*3] +=
+velocity[i].x;
+
+pos[i*3+1] +=
+velocity[i].y;
+
+pos[i*3+2] +=
+velocity[i].z;
+
+}
+
+particleGeo.attributes
+.position.needsUpdate =
+true;
+
+}
+
+// Stage 3 GALAXY APPEARS
+
+if(elapsed > galaxyRotationStart){
+if(music.muted){
+music.currentTime = 0;
+music.muted = false;
+}
+
+const fadeProgress =
+THREE.MathUtils.clamp((elapsed - galaxyRotationStart) / 4, 0, 1);
+
+galaxy.material.opacity = fadeProgress;
+
+galaxy.rotation.y += 0.0008;
+galaxy.rotation.z += 0.0002;
+galaxyCoreGroup.quaternion.copy(galaxy.quaternion);
+inflow.quaternion.copy(galaxy.quaternion);
+inflow.material.opacity = fadeProgress * 0.82;
+
+const bubbleElapsed = elapsed - galaxyRotationStart;
+const inflowPositionsAttribute = inflowGeometry.attributes.position;
+const inflowColorAttribute = inflowGeometry.attributes.color;
+const liveInflowPositions = inflowPositionsAttribute.array;
+const liveInflowColors = inflowColorAttribute.array;
+inflowParticles.forEach(({phase, duration, angle, height, offset}, index) => {
+const i3 = index * 3;
+const progress = (phase + bubbleElapsed / duration) % 1;
+const radius = 54 - progress * 48;
+const spiralAngle = angle + progress * 5.4 + bubbleElapsed * 0.05 + offset;
+
+liveInflowPositions[i3] = Math.cos(spiralAngle) * radius;
+liveInflowPositions[i3 + 1] = height * (radius / 54);
+liveInflowPositions[i3 + 2] = Math.sin(spiralAngle) * radius;
+
+inflowColor.copy(inflowOuterColor).lerp(inflowInnerColor, progress * 0.72);
+liveInflowColors[i3] = inflowColor.r;
+liveInflowColors[i3 + 1] = inflowColor.g;
+liveInflowColors[i3 + 2] = inflowColor.b;
+});
+inflowPositionsAttribute.needsUpdate = true;
+inflowColorAttribute.needsUpdate = true;
+
+vortex.rotation.z -= 0.006;
+vortexArms.rotation.z -= 0.0035;
+accretionDiskMaterial.uniforms.uTime.value = bubbleElapsed;
+accretionDiskMaterial.uniforms.uFade.value = fadeProgress;
+vortex.material.opacity = fadeProgress * 0.85;
+vortexArmMaterials.forEach((material, index) => {
+material.opacity = fadeProgress * (0.28 + index * 0.035);
+});
+eventHorizon.material.opacity = fadeProgress * (0.78 + Math.sin(bubbleElapsed * 1.6) * 0.12);
+eventHorizon.scale.setScalar(1 + Math.sin(bubbleElapsed * 1.6) * 0.035);
+bubbleCoreLight.intensity = 34 + Math.sin(bubbleElapsed * 1.7) * 12;
+
+const bubbleEmissionElapsed =
+bubbleElapsed - bubbleStartDelayAfterGalaxyStart;
+bubbles.forEach(({mesh, delay, life, size, phase, drift, direction, swirl}) => {
+if(bubbleEmissionElapsed < 0){
+mesh.visible = false;
+return;
+}
+
+const age = bubbleEmissionElapsed - delay;
+if(age < 0){
+mesh.visible = false;
+return;
+}
+
+const progress = (age % life) / life;
+const fadeIn = THREE.MathUtils.smoothstep(progress, 0, 0.12);
+const fadeOut = 1 - THREE.MathUtils.smoothstep(progress, 0.78, 1);
+const travel = progress * progress * 42;
+const shimmer = Math.sin(age * 0.68 + phase) * drift * progress;
+
+mesh.visible = true;
+mesh.position.set(
+direction.x * travel + swirl.x * shimmer,
+direction.y * travel + swirl.y * shimmer,
+direction.z * travel + swirl.z * shimmer
+);
+
+const scale = size * (0.82 + Math.sin(progress * Math.PI) * 0.24);
+mesh.scale.setScalar(scale);
+mesh.rotation.set(
+age * (0.04 + swirl.x * 0.025),
+phase + age * (0.05 + swirl.y * 0.025),
+age * (0.03 + swirl.z * 0.025)
+);
+mesh.material.uniforms.uTime.value = bubbleEmissionElapsed;
+mesh.material.uniforms.uFade.value = fadeIn * fadeOut * fadeProgress;
+});
+
+meteors.forEach((meteor) => {
+const cycleTime = bubbleElapsed + meteor.offset;
+const cycleIndex = Math.floor(cycleTime / meteor.cycle);
+const age = cycleTime % meteor.cycle;
+
+if(cycleIndex !== meteor.cycleIndex){
+meteor.cycleIndex = cycleIndex;
+const radius = 48 + Math.random() * 34;
+const startAngle = Math.random() * Math.PI * 2;
+const tangentAngle = startAngle + Math.PI * 0.5 + (Math.random() - 0.5) * 0.9;
+const travelDistance = 16 + Math.random() * 24;
+
+meteor.start.set(
+Math.cos(startAngle) * radius,
+Math.sin(startAngle) * radius,
+(Math.random() - 0.5) * 14
+);
+meteor.end.set(
+meteor.start.x + Math.cos(tangentAngle) * travelDistance,
+meteor.start.y + Math.sin(tangentAngle) * travelDistance,
+meteor.start.z + (Math.random() - 0.5) * 10
+);
+}
+
+if(age >= meteor.life){
+meteor.trail.visible = false;
+meteor.head.visible = false;
+return;
+}
+
+const progress = age / meteor.life;
+const fade = Math.sin(progress * Math.PI) * fadeProgress;
+const headPosition = meteor.start.clone().lerp(meteor.end, progress);
+const trailStart = meteor.start.clone().lerp(meteor.end, Math.max(0, progress - 0.16));
+const positions = meteor.trail.geometry.attributes.position.array;
+
+positions[0] = trailStart.x;
+positions[1] = trailStart.y;
+positions[2] = trailStart.z;
+positions[3] = headPosition.x;
+positions[4] = headPosition.y;
+positions[5] = headPosition.z;
+meteor.trail.geometry.attributes.position.needsUpdate = true;
+meteor.trail.visible = true;
+meteor.trail.material.opacity = fade * 0.95;
+meteor.head.visible = true;
+meteor.head.position.copy(headPosition);
+meteor.head.scale.setScalar(0.85 + fade * 0.25);
+meteor.head.material.opacity = fade;
+});
+
+camera.position.z =
+getCameraDistance() +
+Math.sin(
+elapsed*0.2
+)*5;
+
+}
+
+if(elapsed > galaxyRotationStart + messageDelayAfterGalaxyStart){
+document
+.getElementById("message")
+.classList.add("is-visible");
+}
+
+}
+
+renderer.render(
+scene,
+camera
+);
+
+}
+
+animate();
+
+window.addEventListener(
+"resize",
+()=>{
+
+camera.aspect =
+window.innerWidth/
+window.innerHeight;
+
+camera.updateProjectionMatrix();
+camera.position.z = getCameraDistance();
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+renderer.setPixelRatio(
+Math.min(window.devicePixelRatio, 1.5)
+);
+
+}
+);
+
+</script>
+
+</body>
+</html>

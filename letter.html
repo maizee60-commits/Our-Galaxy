@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Letter for You</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            min-height: 100dvh;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+            color: #fff5fb;
+            background:
+                radial-gradient(ellipse at 50% 0%, rgba(137, 73, 145, 0.32), transparent 55%),
+                #090711;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        main {
+            width: min(100%, 680px);
+            padding: clamp(28px, 7vw, 60px);
+            border: 1px solid rgba(255, 190, 225, 0.3);
+            border-radius: 24px;
+            background: rgba(25, 17, 34, 0.86);
+            box-shadow: 0 0 60px rgba(255, 105, 180, 0.15);
+        }
+
+        h1 {
+            margin: 0 0 28px;
+            color: #ffaddb;
+            font-size: clamp(2rem, 7vw, 3.5rem);
+            text-align: center;
+            text-shadow: 0 0 24px rgba(255, 105, 180, 0.45);
+        }
+
+        p {
+            margin: 0 0 18px;
+            font-size: clamp(1rem, 2.6vw, 1.2rem);
+            line-height: 1.8;
+        }
+
+        a {
+            color: #b9bdff;
+            text-decoration: none;
+        }
+
+        a:hover,
+        a:focus-visible {
+            color: #fff;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+
+        tr th,
+        tr td {
+            border: 1px solid #e6e6e6;
+        }
+
+        tr th {
+            background-color: #f5f5f5;
+        }
+
+        .signature {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 32px;
+            color: #ffaddb;
+            text-align: right;
+        }
+
+        main > a {
+            display: inline-block;
+            margin-top: 14px;
+            min-height: 44px;
+            padding: 10px 4px;
+        }
+
+        #resumeMusic {
+            display: none;
+            min-height: 48px;
+            margin-top: 14px;
+            padding: 12px 20px;
+            border: 1px solid rgba(255, 190, 225, 0.5);
+            border-radius: 999px;
+            color: #fff5fb;
+            background: rgba(255, 105, 180, 0.2);
+            font: inherit;
+            cursor: pointer;
+        }
+
+        @media (max-width: 480px) {
+            main {
+                padding: 28px 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>A Little Letter for You</h1>
+        <p>My love,</p>
+        <p>
+            I can’t believe we’ve known and loved each other for two months
+            already. Lately, we’ve been facing a lot of challenges, but I hope
+            we continue choosing each other, no matter how cruel the world can
+            be to us.
+        </p>
+        <p>
+            I’m doing my best to stay by your side, no matter what happens,
+            because I want to be your listener whenever you have something to
+            yap about. I want to be your travel partner, exploring new places
+            and making beautiful memories together. I want to try new foods
+            with you, laugh with you, and experience all the little things that
+            make life exciting.
+        </p>
+        <p>
+            I want you to be my other half for eternity, and I’ll be your other
+            half in everything. I know it might sound silly to say this now,
+            but can we turn these dreams into reality, Ali?
+        </p>
+        <p>
+            I also want to apologize for the times I become grumpy or upset.
+            Sometimes, something you do makes me feel like I’m not good enough
+            for you. I’m sorry, Ali.
+        </p>
+        <p>
+            Thank you for loving me, understanding me, and staying with me
+            despite all my flaws. Every day, you give me another reason to
+            smile, and my love for you grows a little more.
+        </p>
+        <p>
+            I love you so much, my favorite raven. No matter where life takes
+            us, a part of my heart will always belong to you.
+        </p>
+        <p class="signature">
+            <strong>Sincerely yours,</strong>
+            <strong>Sky Montecalvo</strong>
+        </p>
+        <a href="./index.html">Back to our universe</a>
+        <button id="resumeMusic" type="button">Continue the music</button>
+    </main>
+    <audio id="music" src="./Bubble%20OST%20Main%20Theme%20EPIC%20EMOTIONAL%20COVER%20(UTAtoHIBIKI).mp3" preload="auto" playsinline loop></audio>
+    <script>
+        const music = document.getElementById("music");
+        const resumeButton = document.getElementById("resumeMusic");
+        const playbackStorageKey = "universeMusicTime";
+
+        function savePlaybackPosition() {
+            if (Number.isFinite(music.currentTime)) {
+                sessionStorage.setItem(playbackStorageKey, String(music.currentTime));
+            }
+        }
+
+        async function startMusic() {
+            try {
+                await music.play();
+                resumeButton.style.display = "none";
+            } catch (error) {
+                console.warn("Automatic music playback was blocked; show the continue button.", error);
+                resumeButton.style.display = "inline-block";
+            }
+        }
+
+        function restorePlaybackPosition() {
+            const savedTime = Number(sessionStorage.getItem(playbackStorageKey));
+            if (Number.isFinite(savedTime) && savedTime >= 0 && music.duration > 0) {
+                music.currentTime = savedTime % music.duration;
+            }
+            startMusic();
+        }
+
+        if (music.readyState >= 1) {
+            restorePlaybackPosition();
+        } else {
+            music.addEventListener("loadedmetadata", restorePlaybackPosition, { once: true });
+        }
+
+        music.addEventListener("error", () => {
+            resumeButton.textContent = "Music couldn't load";
+            resumeButton.style.display = "inline-block";
+        });
+
+        resumeButton.addEventListener("click", startMusic);
+        document.querySelector('a[href="./index.html"]').addEventListener("click", savePlaybackPosition);
+        window.addEventListener("pagehide", savePlaybackPosition);
+    </script>
+</body>
+</html>
